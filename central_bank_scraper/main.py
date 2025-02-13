@@ -157,7 +157,7 @@ def main(run_headless=True):
                 exit(1)
     else:
         # use all banks
-        RUN_ONLY_BANKS = list(central_banks.BaseBankScraper.registry.keys())
+        RUN_ONLY_BANKS = list(BANK_NAMES_MAPPER.keys())
     run(run_headless, RUN_ONLY_BANKS)
 
 
