@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "central-bank-scraper"
+version = "0.1.0"
+description = "Scrape the cental banks data."
+authors = ["Lukas Kiss <lukaskiss222@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+agti = { path = "agti", develop = true}
+selenium = "^4.28.1"
+pdfplumber = "^0.11.5"
+sentry-sdk = "^2.21.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
