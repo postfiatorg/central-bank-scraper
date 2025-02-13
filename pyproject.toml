@@ -12,6 +12,7 @@ agti = { path = "agti", develop = true}
 selenium = "^4.28.1"
 pdfplumber = "^0.11.5"
 sentry-sdk = "^2.21.0"
+python-dotenv = "^1.0.1"
 
 
 [build-system]

@@ -3,7 +3,7 @@ import sentry_sdk
 import os
 import sys
 import logging
-import argparse
+import json
 from selenium.webdriver.chrome.options import Options
 from agti import central_banks
 from agti.utilities.settings import PasswordMapLoader
@@ -13,13 +13,16 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 
 
 
+BANK_NAMES_MAPPER = {bank.split('Bank')[0].lower(): bank for bank in  central_banks.BaseBankScraper.registry.keys()}
+psLoader = None
+
 # TODO Move env to one big dict usiong decouple
 SENTRY_DSN = os.environ.get('SENTRY_DSN')
 DEBUG = os.environ.get('DEBUG', False)
 SLEEP = os.environ.get('SLEEP', 60)
 TABLE_NAME = os.environ.get('TABLE_NAME')
 DB_USER_NAME = os.environ.get('DB_USER_NAME')
-HEADLESS = os.environ.get('HEADLESS', "true").lower() == "true"
+RUN_ONLY_BANKS = json.loads(os.environ.get('RUN_ONLY_BANKS', '[]'))
 
 
 logging.basicConfig(
@@ -32,6 +35,7 @@ logging.basicConfig(
 logging.captureWarnings(True)
 logger = logging.getLogger(__name__)  # Main logger
 
+"""
 def handle_exception(exc_type, exc_value, exc_traceback):
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
@@ -41,7 +45,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 
 sys.excepthook = handle_exception
-
+"""
 
 
 if SENTRY_DSN:
@@ -71,8 +75,8 @@ else:
 
 
 
-BANK_NAMES_MAPPER = {bank.split('Bank')[0].lower(): bank for bank in  central_banks.BaseBankScraper.registry.keys()}
-psLoader = None
+
+
 
 
 class HeadlessManager:
@@ -107,26 +111,13 @@ class HeadlessManager:
 
 
 
-def run():
-    #supported_banks = []
-    supported_banks = list(central_banks.BaseBankScraper.registry.keys())
-    """
-    if len(args.include) > 0:
-        for bank_name in args.include:
-            supported_banks.append(BANK_NAMES_MAPPER[bank_name])
-    else:
-        # by default include all banks
-        
-    
-    for bank_name in args.exclude:
-        supported_banks.remove(BANK_NAMES_MAPPER[bank_name])
-    """
+def run(run_headless, supported_banks):
     logger.info(f"Supported banks: {supported_banks}")
     while True:
         for supported_bank in supported_banks:
             logger.info(f"Processing bank: {supported_bank}")
-            with HeadlessManager(HEADLESS) as driver:
-                scrapperCls = central_banks.BaseBankScraper.registry[supported_bank]
+            with HeadlessManager(run_headless) as driver:
+                scrapperCls = central_banks.BaseBankScraper.registry[BANK_NAMES_MAPPER[supported_bank]]
                 scrapper = scrapperCls(driver, psLoader.pw_map, DB_USER_NAME, TABLE_NAME)
                 try:
                     scrapper.process_all_years()
@@ -134,7 +125,7 @@ def run():
                     logger.exception(f"Error processing bank: {supported_bank}",
                         extra={
                             "bank": supported_bank,
-                            "HEADLESS": HEADLESS,
+                            "HEADLESS": run_headless,
                             "DB_USER_NAME": DB_USER_NAME,
                             "TABLE_NAME": TABLE_NAME
                             }
@@ -142,8 +133,8 @@ def run():
         time.sleep(SLEEP)
 
 
-def main():
-    global psLoader
+def main(run_headless=True):
+    global psLoader, RUN_ONLY_BANKS
     # verify input and initialize password loader
     password = os.environ.get('PASSWORD')
     if not password:
@@ -157,25 +148,18 @@ def main():
     if not TABLE_NAME:
         logger.critical("TABLE_NAME is required, please set the TABLE_NAME environment variable")
         exit(1)
-    """
-    for bank in args.include:
-        if bank not in BANK_NAMES_MAPPER.keys():
-            print(f"{bank} not in supoprted banks")
-            print("Supported banks are:")
-            print(list(BANK_NAMES_MAPPER.keys()))
-            exit(parser.print_usage())
-    for bank in args.exclude:
-        if bank not in BANK_NAMES_MAPPER.keys():
-            print(f"{bank} not in supoprted banks")
-            print("Supported banks are:")
-            print(list(BANK_NAMES_MAPPER.keys()))
-            exit(parser.print_usage())
-    """
-
-    mode = "HEADLESS" if HEADLESS else "GUI"
-    logger.info(f"Starting the scraper in {mode}")
-    run()
+    if len(RUN_ONLY_BANKS) > 0:
+        for bank in RUN_ONLY_BANKS:
+            if bank not in BANK_NAMES_MAPPER.keys():
+                print(f"\"{bank}\" not in supoprted banks")
+                print("Supported banks are:")
+                print(list(BANK_NAMES_MAPPER.keys()))
+                exit(1)
+    else:
+        # use all banks
+        RUN_ONLY_BANKS = list(central_banks.BaseBankScraper.registry.keys())
+    run(run_headless, RUN_ONLY_BANKS)
 
 
 if __name__ == '__main__':
-    main()
+    main(True)
