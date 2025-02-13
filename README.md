@@ -14,19 +14,31 @@ The package is developed and tested on Python 3.11+. Please make sure you have t
 
 ## Deploy dockerized locally (headless)
 Setup local database with password:
-
-`poetry run python scripts/set_sql_login.py create_new postgres postgresql://postgres:postgres@db:5432/test_db`
-
+`poetry run python scripts/set_sql_login.py create_new postgres postgresql://postgres:postgres@db:5555/test_db`
 
 Copy and setup configuration file
-
 `cp deploy/.env.template .env`
 
 Build the image:
-
 `docker build . -t central_banks_scrapper`
 
 Run using:
+`docker compose -f docker-compose.yml -f docker-compose-db.yml up`
 
-`docker compose -f docker-compose.yml -f docker-compose-db.yml`
+Remove containers:
+`docker compose -f docker-compose.yml -f docker-compose-db.yml down`
+
+
+## Run locally with head
+Setup key to db
+`poetry run python scripts/set_sql_login.py create_new postgres postgresql://postgres:postgres@localhost:5555/test_db`
+
+Copy and setup configuration file
+`cp deploy/.env.template .env`
+
+Start db:
+`docker compose -f docker-compose-db.yml up -d`
+
+Run:
+`poetry run python local_main.py`
 
