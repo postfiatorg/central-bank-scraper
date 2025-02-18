@@ -19,7 +19,7 @@ psLoader = None
 # TODO Move env to one big dict usiong decouple
 SENTRY_DSN = os.environ.get('SENTRY_DSN')
 DEBUG = os.environ.get('DEBUG', False)
-SLEEP = os.environ.get('SLEEP', 60)
+SLEEP = int(os.environ.get('SLEEP', "60"))
 TABLE_NAME = os.environ.get('TABLE_NAME')
 DB_USER_NAME = os.environ.get('DB_USER_NAME')
 RUN_ONLY_BANKS = json.loads(os.environ.get('RUN_ONLY_BANKS', '[]'))
@@ -130,7 +130,10 @@ def run(run_headless, supported_banks):
                             "TABLE_NAME": TABLE_NAME
                             }
                     )
-        time.sleep(SLEEP)
+        if SLEEP >= 0:
+            time.sleep(SLEEP)
+        else:
+            break
 
 
 def main(run_headless=True):
