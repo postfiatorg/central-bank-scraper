@@ -18,7 +18,8 @@ psLoader = None
 
 # TODO Move env to one big dict usiong decouple
 SENTRY_DSN = os.environ.get('SENTRY_DSN')
-DEBUG = os.environ.get('DEBUG', False)
+DEBUG = os.environ.get('DEBUG', "false" ).lower() == "true"
+DISABLE_PDF_PARSING = os.environ.get('DISABLE_PDF_PARSING', "false" ).lower() == "true"
 SLEEP = int(os.environ.get('SLEEP', "60"))
 TABLE_NAME = os.environ.get('TABLE_NAME')
 DB_USER_NAME = os.environ.get('DB_USER_NAME')
@@ -26,13 +27,18 @@ RUN_ONLY_BANKS = json.loads(os.environ.get('RUN_ONLY_BANKS', '[]'))
 
 
 logging.basicConfig(
-    level=logging.DEBUG if DEBUG else logging.INFO,
+    level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),  # Log to stdout for Docker compatibility
     ]
 )
 logging.captureWarnings(True)
+# SET AGTI loger to debug or info mode
+# Configure the 'agti' logger (and all its submodules) to DEBUG.
+logging.getLogger("agti").setLevel(logging.DEBUG if DEBUG else logging.INFO)
+
+
 logger = logging.getLogger(__name__)  # Main logger
 
 """
@@ -112,6 +118,7 @@ class HeadlessManager:
 
 
 def run(run_headless, supported_banks):
+    logger.info(f"Processing pdf is {'enabled' if not DISABLE_PDF_PARSING else 'disabled'}")
     logger.info(f"Supported banks: {supported_banks}")
     while True:
         for supported_bank in supported_banks:

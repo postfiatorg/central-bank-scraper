@@ -1,3 +1,7 @@
+-- delete tables if they exist
+DROP TABLE IF EXISTS central_banks_g10_links;
+DROP TABLE IF EXISTS central_banks_g10_categories;
+DROP TABLE IF EXISTS central_banks_g10;
 CREATE TABLE central_banks_g10 (
     id bigserial PRIMARY KEY, -- Unique identifier for each row
     country_name VARCHAR(100) NOT NULL,                      -- Country name
